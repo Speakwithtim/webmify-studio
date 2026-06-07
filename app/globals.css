@@ -27,3 +27,47 @@ body {
 .prose img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
 .prose strong { font-weight: 600; }
 .prose hr { border: none; border-top: 1px solid #e0e0d8; margin: 2rem 0; }
+
+@media (max-width: 768px) {
+  /* Studio dashboard */
+  main { padding: 24px 16px !important; }
+  header { padding: 0 16px !important; }
+
+  /* Stats grid */
+  div[style*="grid-template-columns: repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Action cards */
+  div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Posts list */
+  div[style*="justify-content: space-between"] {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Editor */
+  .w-md-editor { min-height: 300px !important; }
+
+  /* Buttons row in header */
+  div[style*="display: flex; gap: 10px"] {
+    gap: 6px !important;
+  }
+
+  button[style*="padding: 8px 20px"] {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* Subscribers table */
+  div[style*="grid-template-columns: 1fr 1fr 160px"] {
+    grid-template-columns: 1fr 100px !important;
+  }
+
+  div[style*="grid-template-columns: 1fr 1fr 160px"] span:nth-child(2) {
+    display: none;
+  }
+}
