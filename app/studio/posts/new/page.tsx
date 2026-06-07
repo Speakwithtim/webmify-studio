@@ -1,82 +1,69 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const CATEGORIES = ['General', 'Product', 'Development', 'Strategy', 'Design', 'SEO', 'Business']
+function uid() { return Math.random().toString(36).slice(2, 9) }
 
 const Icon = {
-  bold: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h5a2.5 2.5 0 010 5H3V2zM3 7h5.5a2.5 2.5 0 010 5H3V7z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
-  italic: <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M4 2h6M2 12h6M8 2L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  underline: <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 2v5a4 4 0 008 0V2M1 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  h1: <svg width="22" height="14" viewBox="0 0 22 14" fill="none"><path d="M1 2v10M1 7h7M8 2v10M14 12V5l-2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  h2: <svg width="24" height="14" viewBox="0 0 24 14" fill="none"><path d="M1 2v10M1 7h7M8 2v10M14 5a2.5 2.5 0 014 2c0 1.5-1.5 2.5-4 5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  h3: <svg width="24" height="14" viewBox="0 0 24 14" fill="none"><path d="M1 2v10M1 7h7M8 2v10M14 5a2 2 0 013.5 1.5 1.8 1.8 0 01-1.5 1.8A2 2 0 0118 10a2 2 0 01-3.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  quote: <svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 1h5v5H1V1zM8 1h5v5H8V1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M6 6c0 2-1.5 3.5-2.5 4M13 6c0 2-1.5 3.5-2.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
-  ul: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="2" cy="3.5" r="1.2" fill="currentColor"/><circle cx="2" cy="7" r="1.2" fill="currentColor"/><circle cx="2" cy="10.5" r="1.2" fill="currentColor"/><path d="M5.5 3.5h7M5.5 7h7M5.5 10.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  ol: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3.5h7M5.5 7h7M5.5 10.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M2 2v3M1.5 5h1.5M1.5 8.5a1 1 0 011-1 1 1 0 010 2 1 1 0 000 1.5H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>,
-  hr: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  link: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 8.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-4.95-4.95L6 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M8.5 5.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 004.95 4.95L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  image: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="5.5" r="1.2" fill="currentColor"/><path d="M1.5 9.5l3-3 2.5 2.5 2-2 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  search: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3"/><path d="M9.5 9.5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  trash: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4M5.5 6.5v4M8.5 6.5v4M3.5 4l.5 8h6l.5-8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  check: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  eye: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3"/><circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  write: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2-7 7-2.5.5.5-2.5 7-7z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
-  seo: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.3"/><path d="M6 3.5V6l1.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  plus: <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-  upload: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 13V4M7 7l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 14v1a2 2 0 002 2h10a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  bold: <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1h5.5a3 3 0 010 6H2V1zM2 7h6a3 3 0 010 6H2V7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+  italic: <svg width="11" height="14" viewBox="0 0 11 14" fill="none"><path d="M3 1h6M2 13h6M7.5 1L3.5 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  underline: <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M2 1v5a4 4 0 008 0V1M1 13h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  strike: <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M9 4a3 3 0 00-6 0c0 1.5 1 2.5 3 3M1 7h10M3 10c0 1.5 1.5 3 3 3s3-1 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  ul: <svg width="14" height="13" viewBox="0 0 14 13" fill="none"><circle cx="2" cy="2.5" r="1.2" fill="currentColor"/><circle cx="2" cy="6.5" r="1.2" fill="currentColor"/><circle cx="2" cy="10.5" r="1.2" fill="currentColor"/><path d="M5.5 2.5h7M5.5 6.5h7M5.5 10.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  ol: <svg width="14" height="13" viewBox="0 0 14 13" fill="none"><path d="M5.5 2.5h7M5.5 6.5h7M5.5 10.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M2 1.5v3M1.5 4.5H3M1.5 8a1 1 0 011-1 1 1 0 010 2 1 1 0 000 1.5H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  quote: <svg width="13" height="12" viewBox="0 0 13 12" fill="none"><path d="M1 1h4v4H1V1zM8 1h4v4H8V1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M5 5c0 2-1 3-2 4M12 5c0 2-1 3-2 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  link: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 8.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-5-5L6 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M8.5 5.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 005 5L8 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  image: <svg width="14" height="13" viewBox="0 0 14 13" fill="none"><rect x="1" y="1.5" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="5" r="1.2" fill="currentColor"/><path d="M1 9.5l3-3 2.5 2.5 2-2 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  hr: <svg width="14" height="13" viewBox="0 0 14 13" fill="none"><path d="M2 6.5h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  search: <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3"/><path d="M9 9l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  eye: <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 5.5S3 1 7 1s6 4.5 6 4.5-2 4.5-6 4.5S1 5.5 1 5.5z" stroke="currentColor" strokeWidth="1.3"/><circle cx="7" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
+  upload: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 12V3M6 6l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 13v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  trash: <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1.5 3.5h10M4.5 3.5V2a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1.5M5 6v5M8 6v5M2.5 3.5l.5 9h7l.5-9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 }
 
-function TB({ onClick, title, children, active }: { onClick: () => void; title: string; children: React.ReactNode; active?: boolean }) {
+function TBtn({ onClick, title, children, active }: { onClick: () => void; title: string; children: React.ReactNode; active?: boolean }) {
   return (
     <button type="button" title={title} onMouseDown={e => { e.preventDefault(); onClick() }}
-      style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, border:'1px solid', borderColor: active ? '#0c0c0a' : '#e0e0d8', borderRadius:7, background: active ? '#0c0c0a' : '#fff', color: active ? '#fff' : '#3a3a36', cursor:'pointer', flexShrink:0 }}>
+      style={{ display:'flex', alignItems:'center', justifyContent:'center', minWidth:30, height:28, padding:'0 6px', border:'1px solid', borderColor: active?'#2271b1':'#dcdcde', borderRadius:3, background: active?'#2271b1':'#fff', color: active?'#fff':'#1e1e1e', cursor:'pointer', flexShrink:0 }}>
       {children}
     </button>
   )
 }
-function Sep() { return <span style={{ width:1, height:22, background:'#e8e8e2', flexShrink:0 }} /> }
+function Sep() { return <span style={{ width:1, height:20, background:'#dcdcde', margin:'0 2px', flexShrink:0 }} /> }
 
 type BlockType = 'paragraph'|'h1'|'h2'|'h3'|'quote'|'ul'|'ol'|'hr'|'image'
 type Block = { id:string; type:BlockType; text:string; src?:string; alt?:string; caption?:string; align?:string }
-function uid() { return Math.random().toString(36).slice(2,9) }
 
-function ImageCard({ block, onUpdate, onRemove }: { block:Block; onUpdate:(d:Partial<Block>)=>void; onRemove:()=>void }) {
+function ImageBlock({ block, onUpdate, onRemove }:{ block:Block; onUpdate:(d:Partial<Block>)=>void; onRemove:()=>void }) {
   const [editing, setEditing] = useState(false)
   const [alt, setAlt] = useState(block.alt||'')
   const [cap, setCap] = useState(block.caption||'')
   const [align, setAlign] = useState(block.align||'center')
-  const s: React.CSSProperties = align==='left' ? {float:'left',margin:'0 20px 16px 0',maxWidth:'45%'} : align==='right' ? {float:'right',margin:'0 0 16px 20px',maxWidth:'45%'} : align==='full' ? {width:'100%',margin:'16px 0'} : {display:'block',margin:'16px auto',maxWidth:'100%'}
   return (
-    <div style={{ position:'relative', margin:'12px 0', ...s }} contentEditable={false}>
-      <img src={block.src} alt={alt} style={{ width:'100%', borderRadius:10, display:'block' }} />
-      {cap && <p style={{ textAlign:'center', fontSize:13, color:'#78786e', margin:'6px 0 0', fontStyle:'italic' }}>{cap}</p>}
+    <div style={{ margin:'12px 0', position:'relative', border:'1px solid #dcdcde', borderRadius:4, overflow:'hidden' }}>
+      <img src={block.src} alt={alt} style={{ width:'100%', display:'block', maxHeight:400, objectFit:'cover' }} />
+      {cap&&<p style={{ textAlign:'center', fontSize:13, color:'#646970', margin:'6px 0', fontStyle:'italic' }}>{cap}</p>}
       <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:4 }}>
-        <button type="button" onClick={() => setEditing(e=>!e)} style={{ padding:'4px 8px', fontSize:11, fontWeight:600, background:'rgba(12,12,10,.75)', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', backdropFilter:'blur(4px)' }}>Edit</button>
-        <button type="button" onClick={onRemove} style={{ padding:'4px 6px', background:'rgba(196,74,42,.8)', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', display:'flex', alignItems:'center' }}>{Icon.trash}</button>
+        <button type="button" onClick={()=>setEditing(e=>!e)} style={{ padding:'4px 8px', fontSize:11, fontWeight:600, background:'rgba(0,0,0,.7)', color:'#fff', border:'none', borderRadius:3, cursor:'pointer' }}>Edit</button>
+        <button type="button" onClick={onRemove} style={{ padding:'4px 6px', background:'rgba(196,74,42,.9)', color:'#fff', border:'none', borderRadius:3, cursor:'pointer', display:'flex' }}>{Icon.trash}</button>
       </div>
-      {editing && (
-        <div style={{ position:'absolute', top:0, left:0, right:0, background:'#fff', border:'1px solid #e0e0d8', borderRadius:10, padding:16, zIndex:20, boxShadow:'0 8px 32px rgba(0,0,0,.12)' }}>
-          <p style={{ fontSize:11, fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', color:'#78786e', marginBottom:12 }}>Image settings</p>
+      {editing&&(
+        <div style={{ padding:16, background:'#f6f7f7', borderTop:'1px solid #dcdcde' }}>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            <div>
-              <label style={{ fontSize:11, color:'#78786e', display:'block', marginBottom:4 }}>Alt text (SEO + accessibility)</label>
-              <input value={alt} onChange={e=>setAlt(e.target.value)} placeholder="Describe the image..." style={{ width:'100%', padding:'7px 10px', fontSize:13, border:'1px solid #e0e0d8', borderRadius:7, outline:'none' }} />
-            </div>
-            <div>
-              <label style={{ fontSize:11, color:'#78786e', display:'block', marginBottom:4 }}>Caption</label>
-              <input value={cap} onChange={e=>setCap(e.target.value)} placeholder="Optional caption..." style={{ width:'100%', padding:'7px 10px', fontSize:13, border:'1px solid #e0e0d8', borderRadius:7, outline:'none' }} />
-            </div>
-            <div>
-              <label style={{ fontSize:11, color:'#78786e', display:'block', marginBottom:6 }}>Position</label>
-              <div style={{ display:'flex', gap:6 }}>
-                {(['left','center','right','full'] as const).map(a => (
-                  <button key={a} type="button" onClick={()=>setAlign(a)} style={{ padding:'5px 10px', fontSize:11, fontWeight:600, border:'1px solid', borderColor:align===a?'#0c0c0a':'#e0e0d8', borderRadius:6, background:align===a?'#0c0c0a':'#fff', color:align===a?'#fff':'#78786e', cursor:'pointer', textTransform:'capitalize' }}>{a}</button>
+            <div><label style={{ fontSize:12, fontWeight:500, display:'block', marginBottom:4 }}>Alt text (SEO)</label>
+              <input value={alt} onChange={e=>setAlt(e.target.value)} style={{ width:'100%', padding:'6px 8px', fontSize:13, border:'1px solid #dcdcde', borderRadius:3, outline:'none' }}/></div>
+            <div><label style={{ fontSize:12, fontWeight:500, display:'block', marginBottom:4 }}>Caption</label>
+              <input value={cap} onChange={e=>setCap(e.target.value)} style={{ width:'100%', padding:'6px 8px', fontSize:13, border:'1px solid #dcdcde', borderRadius:3, outline:'none' }}/></div>
+            <div><label style={{ fontSize:12, fontWeight:500, display:'block', marginBottom:6 }}>Alignment</label>
+              <div style={{ display:'flex', gap:4 }}>
+                {(['left','center','right','full'] as const).map(a=>(
+                  <button key={a} type="button" onClick={()=>setAlign(a)} style={{ padding:'4px 10px', fontSize:11, fontWeight:600, border:'1px solid', borderColor:align===a?'#2271b1':'#dcdcde', borderRadius:3, background:align===a?'#2271b1':'#fff', color:align===a?'#fff':'#1e1e1e', cursor:'pointer', textTransform:'capitalize' }}>{a}</button>
                 ))}
               </div>
             </div>
-            <button type="button" onClick={() => { onUpdate({alt,caption:cap,align}); setEditing(false) }} style={{ padding:'8px', background:'#0c0c0a', color:'#fff', border:'none', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>{Icon.check} Save</button>
+            <button type="button" onClick={()=>{ onUpdate({alt,caption:cap,align}); setEditing(false) }} style={{ padding:'6px 14px', background:'#2271b1', color:'#fff', border:'none', borderRadius:3, fontSize:12, fontWeight:600, cursor:'pointer', alignSelf:'flex-start' }}>Save</button>
           </div>
         </div>
       )}
@@ -93,16 +80,16 @@ export default function NewPostPage() {
   const [excerpt, setExcerpt] = useState('')
   const [seoTitle, setSeoTitle] = useState('')
   const [seoDesc, setSeoDesc] = useState('')
-  const [seoKeywords, setSeoKeywords] = useState('')
   const [ogImage, setOgImage] = useState('')
-  const [tab, setTab] = useState<'write'|'seo'|'preview'>('write')
+  const [status, setStatus] = useState<'draft'|'published'>('draft')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [focusId, setFocusId] = useState<string|null>(null)
-  const [floatMenu, setFloatMenu] = useState({show:false,mode:'format' as 'format'|'link',url:'',blockId:''})
   const [postPanel, setPostPanel] = useState(false)
   const [postQuery, setPostQuery] = useState('')
   const [postResults, setPostResults] = useState<any[]>([])
+  const [showSEO, setShowSEO] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const refs = useRef<Record<string,HTMLElement|null>>({})
 
@@ -117,19 +104,6 @@ export default function NewPostPage() {
     setTimeout(()=>refs.current[nb.id]?.focus(),50)
   }
 
-  function handleSel(bid:string){
-    const sel=window.getSelection()
-    if(!sel||sel.isCollapsed||!sel.toString().trim()){setFloatMenu(m=>({...m,show:false}));return}
-    setFloatMenu({show:true,mode:'format',url:'',blockId:bid})
-  }
-
-  function execLink(url:string,blockId:string){
-    refs.current[blockId]?.focus()
-    document.execCommand('createLink',false,url)
-    sync(blockId)
-    setFloatMenu(m=>({...m,show:false,mode:'format'}))
-  }
-
   async function uploadImg(file:File,afterId?:string){
     setUploading(true)
     try{
@@ -139,11 +113,8 @@ export default function NewPostPage() {
       if(error)throw error
       const {data}=supabase.storage.from('post-images').getPublicUrl(name)
       const nb:Block={id:uid(),type:'image',text:'',src:data.publicUrl,alt:file.name.replace(/\.[^.]+$/,''),caption:'',align:'center'}
-      setBlocks(bs=>{
-        if(afterId){const i=bs.findIndex(b=>b.id===afterId);const n=[...bs];n.splice(i+1,0,nb);return n}
-        return [...bs,nb]
-      })
-    }catch{alert('Upload failed. Make sure the post-images bucket exists in Supabase (public).')}
+      setBlocks(bs=>{if(afterId){const i=bs.findIndex(b=>b.id===afterId);const n=[...bs];n.splice(i+1,0,nb);return n}return[...bs,nb]})
+    }catch{alert('Upload failed. Make sure the post-images bucket exists in Supabase Storage (public).')}
     finally{setUploading(false)}
   }
 
@@ -155,175 +126,130 @@ export default function NewPostPage() {
 
   function insertPostLink(s:string,t:string){
     const el=refs.current[focusId||'']
-    if(el){el.focus();document.execCommand('insertHTML',false,`<a href="https://webmify-studio.vercel.app/blog/${s}" style="color:#b8944a;text-decoration:underline">${t}</a>`);sync(focusId||'')}
+    if(el){el.focus();document.execCommand('insertHTML',false,`<a href="https://studio.webmify.site/blog/${s}" style="color:#2271b1">${t}</a>`);sync(focusId||'')}
     setPostPanel(false);setPostQuery('');setPostResults([])
   }
 
   function toHTML(){
     return blocks.map(b=>{
-      if(b.type==='image'&&b.src){const as=b.align==='left'?'float:left;margin:0 20px 16px 0;max-width:45%':b.align==='right'?'float:right;margin:0 0 16px 20px;max-width:45%':b.align==='full'?'width:100%;margin:16px 0':'display:block;margin:16px auto;max-width:100%';return `<figure style="margin:0"><img src="${b.src}" alt="${b.alt||''}" style="${as};border-radius:10px"/>${b.caption?`<figcaption style="text-align:center;font-size:13px;color:#78786e;margin-top:6px;font-style:italic">${b.caption}</figcaption>`:''}</figure>`}
-      if(b.type==='hr')return '<hr style="border:none;border-top:1px solid #e0e0d8;margin:2em 0"/>'
+      if(b.type==='image'&&b.src){const as=b.align==='left'?'float:left;margin:0 20px 16px 0;max-width:45%':b.align==='right'?'float:right;margin:0 0 16px 20px;max-width:45%':b.align==='full'?'width:100%;margin:16px 0':'display:block;margin:16px auto;max-width:100%';return`<figure style="margin:0"><img src="${b.src}" alt="${b.alt||''}" style="${as};border-radius:6px"/>${b.caption?`<figcaption style="text-align:center;font-size:13px;color:#646970;margin-top:6px;font-style:italic">${b.caption}</figcaption>`:''}</figure>`}
+      if(b.type==='hr')return'<hr style="border:none;border-top:1px solid #dcdcde;margin:2em 0"/>'
       const tag=b.type==='quote'?'blockquote':b.type==='ul'?'ul':b.type==='ol'?'ol':b.type==='paragraph'?'p':b.type
-      return `<${tag}>${b.text}</${tag}>`
+      return`<${tag}>${b.text}</${tag}>`
     }).join('\n')
   }
 
-  async function save(status:'draft'|'published'){
+  async function save(s:'draft'|'published'){
     if(!title.trim())return alert('Add a title.')
     const html=toHTML()
     if(!html.replace(/<[^>]+>/g,'').trim())return alert('Write some content.')
     setSaving(true)
-    const res=await fetch('/api/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,slug:slug||genSlug(title),content:html,excerpt,category,seo_title:seoTitle||title,seo_description:seoDesc||excerpt,cover_image:ogImage,status,published_at:status==='published'?new Date().toISOString():null})})
+    const res=await fetch('/api/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,slug:slug||genSlug(title),content:html,excerpt,category,seo_title:seoTitle||title,seo_description:seoDesc||excerpt,cover_image:ogImage,status:s,published_at:s==='published'?new Date().toISOString():null})})
     if(res.ok){const p=await res.json();router.push(`/studio/posts/${p.id}`)}
     else{alert('Error saving.');setSaving(false)}
   }
 
   const tagStyles:Record<string,React.CSSProperties>={
-    h1:{fontFamily:'Georgia,serif',fontSize:'clamp(24px,5vw,38px)',fontWeight:400,letterSpacing:'-1.5px',lineHeight:1.15},
-    h2:{fontSize:'clamp(18px,3vw,26px)',fontWeight:600,letterSpacing:'-.5px',lineHeight:1.25},
-    h3:{fontSize:'clamp(15px,2.5vw,20px)',fontWeight:600,lineHeight:1.35},
-    quote:{borderLeft:'3px solid #e0e0d8',paddingLeft:'1em',color:'#78786e',fontStyle:'italic'},
-    paragraph:{fontSize:16,lineHeight:1.85},
-    ul:{fontSize:16,lineHeight:1.85,paddingLeft:'1.5em',listStyleType:'disc' as const},
-    ol:{fontSize:16,lineHeight:1.85,paddingLeft:'1.5em',listStyleType:'decimal' as const},
+    h1:{fontFamily:'Georgia,serif',fontSize:26,fontWeight:400,letterSpacing:'-.5px',lineHeight:1.2,margin:'4px 0'},
+    h2:{fontSize:20,fontWeight:600,lineHeight:1.3,margin:'4px 0'},
+    h3:{fontSize:17,fontWeight:600,lineHeight:1.35,margin:'4px 0'},
+    quote:{borderLeft:'4px solid #dcdcde',paddingLeft:'1em',color:'#646970',fontStyle:'italic',margin:'4px 0'},
+    paragraph:{fontSize:15,lineHeight:1.8,margin:'4px 0',color:'#1e1e1e'},
+    ul:{fontSize:15,lineHeight:1.8,paddingLeft:'1.5em',margin:'4px 0',listStyleType:'disc' as const},
+    ol:{fontSize:15,lineHeight:1.8,paddingLeft:'1.5em',margin:'4px 0',listStyleType:'decimal' as const},
   }
 
-  return (
-    <div style={{minHeight:'100vh',background:'#f4f4f0',fontFamily:"'Geist',system-ui,sans-serif"}}>
-      <header style={{position:'sticky',top:0,zIndex:200,background:'rgba(255,255,255,0.96)',backdropFilter:'blur(8px)',borderBottom:'1px solid #e8e8e2',padding:'0 20px',height:56,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,minWidth:0}}>
-          <a href="/studio/posts" style={{fontSize:12,color:'#78786e',textDecoration:'none',flexShrink:0}}>← Posts</a>
-          <span style={{fontSize:12,color:'#b4b4a8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{title||'New post'}</span>
-        </div>
-        <div style={{display:'flex',gap:6,flexShrink:0}}>
-          <button onClick={()=>save('draft')} disabled={saving} style={{padding:'7px 14px',border:'1px solid #e0e0d8',borderRadius:100,fontSize:12,fontWeight:500,cursor:'pointer',background:'#fff',color:'#0c0c0a',whiteSpace:'nowrap'}}>Save draft</button>
-          <button onClick={()=>save('published')} disabled={saving} style={{padding:'7px 16px',background:'#0c0c0a',color:'#f8f8f5',border:'none',borderRadius:100,fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>{saving?'Saving...':'Publish'}</button>
-        </div>
-      </header>
+  const wordCount=blocks.filter(b=>b.type!=='image'&&b.type!=='hr').map(b=>((refs.current[b.id] as any)?.innerText||b.text.replace(/<[^>]+>/g,'')||'').trim().split(/\s+/).filter(Boolean).length).reduce((a,b)=>a+b,0)
 
-      <div style={{maxWidth:760,margin:'0 auto',padding:'0 16px 100px'}}>
-        {/* Title */}
-        <div style={{background:'#fff',borderRadius:'0 0 14px 14px',padding:'28px 28px 20px',marginBottom:2}}>
-          <input value={title} onChange={e=>{setTitle(e.target.value);if(!slug)setSlug(genSlug(e.target.value))}} placeholder="Post title"
-            style={{width:'100%',fontFamily:'Georgia,serif',fontSize:'clamp(26px,6vw,44px)',fontWeight:400,letterSpacing:'-2px',lineHeight:1.15,border:'none',outline:'none',background:'transparent',color:'#0c0c0a'}} />
-          <div style={{display:'flex',gap:10,marginTop:14,flexWrap:'wrap',alignItems:'center'}}>
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:11,color:'#b4b4a8'}}>Slug</span>
-              <input value={slug} onChange={e=>setSlug(e.target.value)} style={{fontSize:12,border:'1px solid #e8e8e2',borderRadius:6,padding:'3px 8px',outline:'none',background:'#f8f8f5',color:'#0c0c0a',width:140}} />
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:11,color:'#b4b4a8'}}>Category</span>
-              <select value={category} onChange={e=>setCategory(e.target.value)} style={{fontSize:12,border:'1px solid #e8e8e2',borderRadius:6,padding:'3px 8px',outline:'none',background:'#f8f8f5',color:'#0c0c0a',cursor:'pointer'}}>
-                {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div style={{marginLeft:'auto',display:'flex',background:'#f4f4f0',borderRadius:10,padding:3,gap:2}}>
-              {([['write',Icon.write,'Write'],['seo',Icon.seo,'SEO'],['preview',Icon.eye,'Preview']] as const).map(([k,ic,lb])=>(
-                <button key={k} type="button" onClick={()=>setTab(k as any)}
-                  style={{display:'flex',alignItems:'center',gap:5,padding:'5px 10px',fontSize:11,fontWeight:600,border:'none',borderRadius:8,cursor:'pointer',background:tab===k?'#fff':'transparent',color:tab===k?'#0c0c0a':'#78786e',boxShadow:tab===k?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-                  {ic}{lb}
-                </button>
-              ))}
+  return(
+    <div style={{minHeight:'100vh',background:'#f0f0f1',fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'}}>
+      <div style={{background:'#1d2327',height:32,display:'flex',alignItems:'center',padding:'0 20px',gap:16}}>
+        <a href="/studio" style={{fontSize:12,color:'rgba(240,246,252,.7)',textDecoration:'none'}}>← Studio</a>
+        <span style={{fontSize:12,color:'rgba(240,246,252,.4)'}}>New Post</span>
+      </div>
+      <div style={{background:'#fff',borderBottom:'1px solid #dcdcde',padding:'8px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+        <h2 style={{fontSize:14,fontWeight:600,color:'#1d2327',margin:0}}>Add New Post <span style={{fontSize:12,fontWeight:400,color:'#646970',marginLeft:8}}>Word count: {wordCount}</span></h2>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 280px',gap:20,padding:20,maxWidth:1200,margin:'0 auto'}}>
+        <div>
+          {/* Title */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4,marginBottom:16}}>
+            <input value={title} onChange={e=>{setTitle(e.target.value);if(!slug)setSlug(genSlug(e.target.value))}} placeholder="Add title"
+              style={{width:'100%',padding:'12px 16px',fontSize:22,fontWeight:600,border:'none',outline:'none',borderBottom:'1px solid #f0f0f1',color:'#1d2327',fontFamily:'inherit',borderRadius:'4px 4px 0 0'}}/>
+            <div style={{padding:'6px 16px',display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:12,color:'#646970'}}>Permalink:</span>
+              <span style={{fontSize:12,color:'#646970'}}>studio.webmify.site/blog/</span>
+              <input value={slug} onChange={e=>setSlug(e.target.value)} style={{fontSize:12,border:'1px solid #dcdcde',borderRadius:3,padding:'2px 6px',outline:'none',color:'#2271b1',minWidth:100}}/>
             </div>
           </div>
-        </div>
 
-        {/* WRITE */}
-        {tab==='write'&&(
-          <div style={{background:'#fff',borderRadius:14,overflow:'hidden'}}>
-            {/* Toolbar */}
-            <div style={{display:'flex',gap:4,padding:'8px 12px',borderBottom:'1px solid #f0f0ea',background:'#fafaf8',flexWrap:'wrap',alignItems:'center',position:'sticky',top:56,zIndex:100}}>
-              <TB onClick={()=>{if(focusId){document.execCommand('bold');sync(focusId)}}} title="Bold">{Icon.bold}</TB>
-              <TB onClick={()=>{if(focusId){document.execCommand('italic');sync(focusId)}}} title="Italic">{Icon.italic}</TB>
-              <TB onClick={()=>{if(focusId){document.execCommand('underline');sync(focusId)}}} title="Underline">{Icon.underline}</TB>
+          {/* Editor */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4,marginBottom:16}}>
+            <div style={{padding:'8px 12px',borderBottom:'1px solid #f0f0f1',display:'flex',alignItems:'center',gap:8}}>
+              <button type="button" onClick={()=>{if(focusId){fileRef.current?.setAttribute('data-for',focusId)};fileRef.current?.click()}}
+                style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',fontSize:12,fontWeight:600,border:'1px solid #dcdcde',borderRadius:3,background:'#f6f7f7',color:'#1d2327',cursor:'pointer'}}>
+                {uploading?'...':Icon.image} {uploading?'Uploading...':'Add Media'}
+              </button>
+              <div style={{display:'flex',gap:2,marginLeft:'auto'}}>
+                <span style={{fontSize:12,padding:'4px 8px',borderBottom:'2px solid #2271b1',color:'#1d2327',fontWeight:500}}>Visual</span>
+              </div>
+            </div>
+            <div style={{padding:'6px 10px',borderBottom:'1px solid #f0f0f1',display:'flex',gap:3,flexWrap:'wrap',alignItems:'center',background:'#f6f7f7'}}>
+              <select onChange={e=>{if(focusId)upd(focusId,{type:e.target.value as BlockType});e.target.value='paragraph'}} defaultValue="paragraph"
+                style={{fontSize:12,border:'1px solid #dcdcde',borderRadius:3,padding:'3px 6px',background:'#fff',color:'#1e1e1e',cursor:'pointer',outline:'none',height:28}}>
+                <option value="paragraph">Paragraph</option>
+                <option value="h1">Heading 1</option>
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+                <option value="quote">Quote</option>
+              </select>
               <Sep/>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'h1'})} title="Heading 1">{Icon.h1}</TB>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'h2'})} title="Heading 2">{Icon.h2}</TB>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'h3'})} title="Heading 3">{Icon.h3}</TB>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'quote'})} title="Quote">{Icon.quote}</TB>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('bold');sync(focusId)}}} title="Bold">{Icon.bold}</TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('italic');sync(focusId)}}} title="Italic">{Icon.italic}</TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('underline');sync(focusId)}}} title="Underline">{Icon.underline}</TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('strikeThrough');sync(focusId)}}} title="Strike">{Icon.strike}</TBtn>
               <Sep/>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'ul'})} title="Bullet list">{Icon.ul}</TB>
-              <TB onClick={()=>focusId&&upd(focusId,{type:'ol'})} title="Numbered list">{Icon.ol}</TB>
+              <TBtn onClick={()=>focusId&&upd(focusId,{type:'ul'})} title="Bullet list">{Icon.ul}</TBtn>
+              <TBtn onClick={()=>focusId&&upd(focusId,{type:'ol'})} title="Numbered list">{Icon.ol}</TBtn>
+              <TBtn onClick={()=>focusId&&upd(focusId,{type:'quote'})} title="Quote">{Icon.quote}</TBtn>
               <Sep/>
-              <TB onClick={()=>focusId&&ins(focusId,'hr')} title="Divider">{Icon.hr}</TB>
-              <TB onClick={()=>{if(focusId){fileRef.current?.setAttribute('data-for',focusId);fileRef.current?.click()}}} title={uploading?'Uploading...':'Upload image'}>
-                {uploading?<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeDasharray="8 4"><animateTransform attributeName="transform" type="rotate" from="0 7 7" to="360 7 7" dur=".8s" repeatCount="indefinite"/></circle></svg>:Icon.image}
-              </TB>
-              <TB onClick={()=>{if(focusId){const u=prompt('Paste URL:');if(u){refs.current[focusId]?.focus();document.execCommand('createLink',false,u);sync(focusId)}}}} title="Insert link">{Icon.link}</TB>
-              <TB onClick={()=>setPostPanel(p=>!p)} title="Link to a post" active={postPanel}>{Icon.search}</TB>
+              <TBtn onClick={()=>{if(focusId){const u=prompt('URL:');if(u){refs.current[focusId]?.focus();document.execCommand('createLink',false,u);sync(focusId)}}}} title="Link">{Icon.link}</TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('unlink');sync(focusId)}}} title="Remove link">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 8.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-5-5L6 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity=".4"/><path d="M8.5 5.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 005 5L8 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity=".4"/><path d="M2 2l10 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              </TBtn>
+              <Sep/>
+              <TBtn onClick={()=>focusId&&ins(focusId,'hr')} title="Divider">{Icon.hr}</TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('justifyLeft');sync(focusId)}}} title="Align left">
+                <svg width="13" height="12" viewBox="0 0 13 12" fill="none"><path d="M1 1h11M1 4.5h7M1 8h11M1 11.5h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              </TBtn>
+              <TBtn onClick={()=>{if(focusId){document.execCommand('justifyCenter');sync(focusId)}}} title="Align center">
+                <svg width="13" height="12" viewBox="0 0 13 12" fill="none"><path d="M1 1h11M3 4.5h7M1 8h11M3 11.5h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              </TBtn>
+              <Sep/>
+              <TBtn onClick={()=>setPostPanel(p=>!p)} title="Link to post" active={postPanel}>{Icon.search}</TBtn>
             </div>
 
-            {/* Post search */}
             {postPanel&&(
-              <div style={{padding:'10px 16px',borderBottom:'1px solid #f0f0ea',background:'#fdfdf9'}}>
-                <input autoFocus placeholder="Search published posts to link..." value={postQuery}
-                  onChange={e=>{setPostQuery(e.target.value);searchPosts(e.target.value)}}
-                  style={{width:'100%',padding:'8px 12px',fontSize:13,border:'1px solid #e0e0d8',borderRadius:8,outline:'none',background:'#fff'}} />
-                {postResults.length>0&&<div style={{marginTop:6,display:'flex',flexDirection:'column',gap:3}}>{postResults.map(p=><button key={p.id} type="button" onClick={()=>insertPostLink(p.slug,p.title)} style={{padding:'7px 12px',fontSize:12,textAlign:'left',background:'#fff',border:'1px solid #e0e0d8',borderRadius:6,cursor:'pointer',color:'#0c0c0a'}}>{p.title}</button>)}</div>}
-                {postQuery&&!postResults.length&&<p style={{fontSize:12,color:'#b4b4a8',margin:'6px 0 0'}}>No published posts found.</p>}
+              <div style={{padding:'8px 12px',borderBottom:'1px solid #f0f0f1',background:'#f6f7f7'}}>
+                <input autoFocus placeholder="Search published posts..." value={postQuery} onChange={e=>{setPostQuery(e.target.value);searchPosts(e.target.value)}}
+                  style={{width:'100%',padding:'6px 10px',fontSize:13,border:'1px solid #dcdcde',borderRadius:3,outline:'none'}}/>
+                {postResults.length>0&&<div style={{marginTop:6,display:'flex',flexDirection:'column',gap:2}}>{postResults.map(p=><button key={p.id} type="button" onClick={()=>insertPostLink(p.slug,p.title)} style={{padding:'6px 10px',fontSize:12,textAlign:'left',background:'#fff',border:'1px solid #dcdcde',borderRadius:3,cursor:'pointer',color:'#1e1e1e'}}>{p.title}</button>)}</div>}
+                {postQuery&&!postResults.length&&<p style={{fontSize:12,color:'#646970',margin:'6px 0 0'}}>No posts found.</p>}
               </div>
             )}
 
-            {/* Floating menu */}
-            {floatMenu.show&&(
-              <div style={{position:'fixed',top:110,left:'50%',transform:'translateX(-50%)',background:'#0c0c0a',borderRadius:9,padding:'5px 7px',display:'flex',gap:3,alignItems:'center',boxShadow:'0 4px 20px rgba(0,0,0,.3)',zIndex:999,flexWrap:'wrap',maxWidth:'90vw'}}>
-                {floatMenu.mode==='format'?(<>
-                  {[{i:Icon.bold,c:'bold'},{i:Icon.italic,c:'italic'},{i:Icon.underline,c:'underline'}].map(({i,c})=>(
-                    <button key={c} type="button" onMouseDown={e=>{e.preventDefault();document.execCommand(c);sync(floatMenu.blockId);setFloatMenu(m=>({...m,show:false}))}}
-                      style={{display:'flex',alignItems:'center',justifyContent:'center',width:30,height:30,border:'1px solid rgba(255,255,255,.15)',borderRadius:6,background:'transparent',color:'#fff',cursor:'pointer'}}>{i}</button>
-                  ))}
-                  <span style={{width:1,height:20,background:'rgba(255,255,255,.15)'}}/>
-                  {[{i:Icon.h1,t:'h1'},{i:Icon.h2,t:'h2'},{i:Icon.h3,t:'h3'},{i:Icon.quote,t:'quote'}].map(({i,t})=>(
-                    <button key={t} type="button" onMouseDown={e=>{e.preventDefault();upd(floatMenu.blockId,{type:t as any});setFloatMenu(m=>({...m,show:false}))}}
-                      style={{display:'flex',alignItems:'center',justifyContent:'center',width:30,height:30,border:'1px solid rgba(255,255,255,.15)',borderRadius:6,background:'transparent',color:'#fff',cursor:'pointer'}}>{i}</button>
-                  ))}
-                  <span style={{width:1,height:20,background:'rgba(255,255,255,.15)'}}/>
-                  <button type="button" onMouseDown={e=>{e.preventDefault();setFloatMenu(m=>({...m,mode:'link'}))}}
-                    style={{display:'flex',alignItems:'center',justifyContent:'center',width:30,height:30,border:'1px solid rgba(255,255,255,.15)',borderRadius:6,background:'transparent',color:'#fff',cursor:'pointer'}}>{Icon.link}</button>
-                </>):(
-                  <div style={{display:'flex',gap:5,alignItems:'center'}}>
-                    <input autoFocus placeholder="https://..." value={floatMenu.url} onChange={e=>setFloatMenu(m=>({...m,url:e.target.value}))}
-                      onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();execLink(floatMenu.url,floatMenu.blockId)}if(e.key==='Escape')setFloatMenu(m=>({...m,mode:'format'}))}}
-                      style={{padding:'5px 9px',fontSize:12,border:'1px solid rgba(255,255,255,.2)',borderRadius:6,background:'rgba(255,255,255,.1)',color:'#fff',outline:'none',width:180}} />
-                    <button type="button" onMouseDown={e=>{e.preventDefault();execLink(floatMenu.url,floatMenu.blockId)}}
-                      style={{padding:'5px 10px',fontSize:11,fontWeight:600,background:'#b8944a',border:'none',borderRadius:6,color:'#fff',cursor:'pointer'}}>Apply</button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Blocks */}
-            <div style={{padding:'24px 28px 32px',minHeight:400}}>
+            <div style={{padding:'12px 16px',minHeight:400}}>
               {blocks.map((b,idx)=>{
-                if(b.type==='image'){
-                  return b.src?(
-                    <ImageCard key={b.id} block={b} onUpdate={d=>upd(b.id,d)} onRemove={()=>rem(b.id)} />
-                  ):(
-                    <div key={b.id} onClick={()=>{fileRef.current?.setAttribute('data-for',b.id);fileRef.current?.click()}}
-                      style={{border:'2px dashed #e0e0d8',borderRadius:10,padding:'32px 20px',textAlign:'center',cursor:'pointer',background:'#fafaf8',margin:'8px 0'}}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor='#b4b4a8'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e0e0d8'}>
-                      <div style={{color:'#b4b4a8',display:'flex',justifyContent:'center',marginBottom:8}}>{Icon.upload}</div>
-                      <p style={{fontSize:13,fontWeight:600,color:'#78786e',margin:'0 0 4px'}}>Click to upload image</p>
-                      <p style={{fontSize:12,color:'#b4b4a8',margin:0}}>From your computer, phone, or gallery</p>
-                    </div>
-                  )
-                }
-                if(b.type==='hr'){
-                  return(
-                    <div key={b.id} style={{position:'relative',margin:'8px 0'}} onFocus={()=>setFocusId(b.id)}>
-                      <hr style={{border:'none',borderTop:'1px solid #e0e0d8',margin:'16px 0'}}/>
-                      <button type="button" onClick={()=>rem(b.id)} style={{position:'absolute',right:0,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#c44a2a',opacity:.5,padding:4,display:'flex'}}>{Icon.trash}</button>
-                    </div>
-                  )
-                }
+                if(b.type==='image'){return b.src?(<ImageBlock key={b.id} block={b} onUpdate={d=>upd(b.id,d)} onRemove={()=>rem(b.id)}/>):(<div key={b.id} onClick={()=>{fileRef.current?.setAttribute('data-for',b.id);fileRef.current?.click()}} style={{border:'2px dashed #dcdcde',borderRadius:4,padding:'24px 20px',textAlign:'center',cursor:'pointer',margin:'8px 0',background:'#f6f7f7'}} onMouseEnter={e=>e.currentTarget.style.borderColor='#2271b1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#dcdcde'}><div style={{color:'#646970',display:'flex',justifyContent:'center',marginBottom:6}}>{Icon.upload}</div><p style={{fontSize:13,color:'#646970',margin:0}}>Click to upload — from computer, phone, or gallery</p></div>)}
+                if(b.type==='hr'){return(<div key={b.id} style={{position:'relative',margin:'8px 0'}} onFocus={()=>setFocusId(b.id)}><hr style={{border:'none',borderTop:'1px solid #dcdcde',margin:'12px 0'}}/><button type="button" onClick={()=>rem(b.id)} style={{position:'absolute',right:0,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#d63638',padding:4,display:'flex'}}>{Icon.trash}</button></div>)}
                 const Tag=(b.type==='ul'?'ul':b.type==='ol'?'ol':b.type==='quote'?'blockquote':b.type==='paragraph'?'p':b.type) as any
-                const ph={h1:'Heading 1',h2:'Heading 2',h3:'Heading 3',quote:'Quote...',ul:'List item...',ol:'List item...',paragraph:'Write something...'} as any
+                const ph:Record<string,string>={h1:'Heading 1',h2:'Heading 2',h3:'Heading 3',quote:'Quote...',ul:'List item...',ol:'List item...',paragraph:'Start writing...'}
                 return(
-                  <div key={b.id} style={{position:'relative',margin:'2px 0'}} onFocus={()=>setFocusId(b.id)}>
+                  <div key={b.id} style={{position:'relative'}} onFocus={()=>setFocusId(b.id)}>
                     <Tag ref={(el:any)=>{refs.current[b.id]=el}} contentEditable suppressContentEditableWarning
                       data-placeholder={ph[b.type]||''}
                       onInput={(e:any)=>upd(b.id,{text:e.target.innerHTML})}
-                      onMouseUp={()=>handleSel(b.id)} onKeyUp={()=>handleSel(b.id)}
                       onKeyDown={(e:any)=>{
                         if(e.key==='Enter'&&!e.shiftKey&&b.type!=='ul'&&b.type!=='ol'){e.preventDefault();ins(b.id)}
                         if(e.key==='Backspace'){const el=refs.current[b.id];if(el&&(el as any).innerText===''&&blocks.length>1){e.preventDefault();rem(b.id);const prev=blocks[idx-1]?.id;if(prev)setTimeout(()=>{const p=refs.current[prev];p?.focus();const r=document.createRange();const s=window.getSelection();r.selectNodeContents(p!);r.collapse(false);s?.removeAllRanges();s?.addRange(r)},10)}}
@@ -334,84 +260,138 @@ export default function NewPostPage() {
                   </div>
                 )
               })}
-              <button type="button" onClick={()=>ins(blocks[blocks.length-1].id)}
-                style={{marginTop:12,display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#c0c0b8',background:'none',border:'1px dashed #e0e0d8',borderRadius:8,padding:'7px 14px',cursor:'pointer'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='#78786e';e.currentTarget.style.borderColor='#b4b4a8'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='#c0c0b8';e.currentTarget.style.borderColor='#e0e0d8'}}>
-                {Icon.plus} Add block
-              </button>
+            </div>
+            <div style={{padding:'6px 16px',borderTop:'1px solid #f0f0f1',background:'#f6f7f7',display:'flex',justifyContent:'space-between',fontSize:12,color:'#646970'}}>
+              <span>Word count: {wordCount}</span>
             </div>
           </div>
-        )}
 
-        {/* PREVIEW */}
-        {tab==='preview'&&(
-          <div style={{background:'#fff',borderRadius:14,padding:'36px 32px'}}>
-            {ogImage&&<img src={ogImage} style={{width:'100%',borderRadius:12,marginBottom:28,objectFit:'cover',maxHeight:360}} alt=""/>}
-            <span style={{fontSize:10,fontWeight:600,letterSpacing:'2px',textTransform:'uppercase',color:'#b8944a',background:'rgba(184,148,74,.08)',padding:'3px 10px',borderRadius:100,border:'1px solid rgba(184,148,74,.2)'}}>{category}</span>
-            <h1 style={{fontFamily:'Georgia,serif',fontSize:'clamp(24px,5vw,44px)',fontWeight:400,letterSpacing:'-2px',margin:'14px 0 16px',lineHeight:1.1}}>{title||'Your post title'}</h1>
-            {excerpt&&<p style={{fontSize:17,color:'#78786e',lineHeight:1.8,marginBottom:28,paddingBottom:28,borderBottom:'1px solid #e0e0d8'}}>{excerpt}</p>}
-            <div style={{fontSize:16,lineHeight:1.85,color:'#1e1e1a'}} dangerouslySetInnerHTML={{__html:toHTML()}}/>
+          {/* Excerpt */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4,padding:16,marginBottom:16}}>
+            <h3 style={{fontSize:13,fontWeight:600,color:'#1d2327',margin:'0 0 8px'}}>Excerpt</h3>
+            <textarea value={excerpt} onChange={e=>setExcerpt(e.target.value)} placeholder="Short summary for blog listing and search results." rows={3}
+              style={{width:'100%',padding:'8px 10px',fontSize:13,border:'1px solid #dcdcde',borderRadius:3,outline:'none',resize:'vertical',fontFamily:'inherit',lineHeight:1.6}}/>
           </div>
-        )}
 
-        {/* SEO */}
-        {tab==='seo'&&(
-          <div style={{display:'flex',flexDirection:'column',gap:12,paddingTop:12}}>
-            <div style={{background:'#fff',borderRadius:14,padding:24}}>
-              <p style={{fontSize:11,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:'#78786e',marginBottom:18}}>Search Engine Optimization</p>
-              <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                <div>
-                  <label style={{display:'block',fontSize:11,fontWeight:600,color:'#78786e',marginBottom:5,letterSpacing:'1px',textTransform:'uppercase'}}>Excerpt</label>
-                  <textarea value={excerpt} onChange={e=>setExcerpt(e.target.value)} placeholder="A short, compelling summary — 1 to 2 sentences." rows={2}
-                    style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0d8',borderRadius:8,fontSize:13,outline:'none',background:'#fafaf8',resize:'vertical',fontFamily:'inherit',lineHeight:1.6}}/>
+          {/* SEO */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4,marginBottom:16}}>
+            <div onClick={()=>setShowSEO(s=>!s)} style={{padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
+              <h3 style={{fontSize:13,fontWeight:600,color:'#1d2327',margin:0}}>SEO Settings</h3>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={{transform:showSEO?'rotate(180deg)':'none',transition:'.2s'}}><path d="M1 1l5 5 5-5" stroke="#646970" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
+            {showSEO&&(
+              <div style={{padding:'0 16px 16px',borderTop:'1px solid #f0f0f1',display:'flex',flexDirection:'column',gap:12}}>
+                <div style={{paddingTop:12}}>
+                  <label style={{display:'block',fontSize:12,fontWeight:600,color:'#1d2327',marginBottom:5}}>SEO Title <span style={{color:(seoTitle||title).length>60?'#d63638':'#646970',fontWeight:400}}>({(seoTitle||title).length}/60)</span></label>
+                  <input value={seoTitle} onChange={e=>setSeoTitle(e.target.value)} placeholder={title||'SEO title...'} style={{width:'100%',padding:'6px 10px',fontSize:13,border:'1px solid #dcdcde',borderRadius:3,outline:'none'}}/>
                 </div>
                 <div>
-                  <label style={{display:'block',fontSize:11,fontWeight:600,color:'#78786e',marginBottom:5,letterSpacing:'1px',textTransform:'uppercase'}}>SEO Title</label>
-                  <input value={seoTitle} onChange={e=>setSeoTitle(e.target.value)} placeholder={title||'SEO optimized title...'}
-                    style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0d8',borderRadius:8,fontSize:13,outline:'none',background:'#fafaf8'}}/>
-                  <p style={{fontSize:11,color:(seoTitle||title).length>60?'#c44a2a':'#b4b4a8',marginTop:4}}>{(seoTitle||title).length}/60 characters ideal</p>
+                  <label style={{display:'block',fontSize:12,fontWeight:600,color:'#1d2327',marginBottom:5}}>Meta Description <span style={{color:seoDesc.length>160?'#d63638':'#646970',fontWeight:400}}>({seoDesc.length}/160)</span></label>
+                  <textarea value={seoDesc} onChange={e=>setSeoDesc(e.target.value)} placeholder="Describe this post for search engines..." rows={3} style={{width:'100%',padding:'6px 10px',fontSize:13,border:'1px solid #dcdcde',borderRadius:3,outline:'none',resize:'vertical',fontFamily:'inherit'}}/>
                 </div>
                 <div>
-                  <label style={{display:'block',fontSize:11,fontWeight:600,color:'#78786e',marginBottom:5,letterSpacing:'1px',textTransform:'uppercase'}}>Meta Description</label>
-                  <textarea value={seoDesc} onChange={e=>setSeoDesc(e.target.value)} placeholder="Describe what this post covers. Appears in Google search results." rows={3}
-                    style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0d8',borderRadius:8,fontSize:13,outline:'none',background:'#fafaf8',resize:'vertical',fontFamily:'inherit',lineHeight:1.6}}/>
-                  <p style={{fontSize:11,color:seoDesc.length>160?'#c44a2a':'#b4b4a8',marginTop:4}}>{seoDesc.length}/160 characters ideal</p>
+                  <label style={{display:'block',fontSize:12,fontWeight:600,color:'#1d2327',marginBottom:5}}>Cover / OG Image URL</label>
+                  <input value={ogImage} onChange={e=>setOgImage(e.target.value)} placeholder="https://..." style={{width:'100%',padding:'6px 10px',fontSize:13,border:'1px solid #dcdcde',borderRadius:3,outline:'none'}}/>
+                  {ogImage&&<img src={ogImage} alt="" style={{marginTop:8,width:'100%',maxHeight:120,objectFit:'cover',borderRadius:3}}/>}
                 </div>
-                <div>
-                  <label style={{display:'block',fontSize:11,fontWeight:600,color:'#78786e',marginBottom:5,letterSpacing:'1px',textTransform:'uppercase'}}>Focus Keywords</label>
-                  <input value={seoKeywords} onChange={e=>setSeoKeywords(e.target.value)} placeholder="web design Nigeria, SaaS development Africa..."
-                    style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0d8',borderRadius:8,fontSize:13,outline:'none',background:'#fafaf8'}}/>
-                </div>
-                <div>
-                  <label style={{display:'block',fontSize:11,fontWeight:600,color:'#78786e',marginBottom:5,letterSpacing:'1px',textTransform:'uppercase'}}>Cover / OG Image URL</label>
-                  <input value={ogImage} onChange={e=>setOgImage(e.target.value)} placeholder="https://... shown when shared on social"
-                    style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0d8',borderRadius:8,fontSize:13,outline:'none',background:'#fafaf8'}}/>
-                  {ogImage&&<img src={ogImage} alt="" style={{marginTop:8,width:'100%',maxHeight:160,objectFit:'cover',borderRadius:8}}/>}
+                <div style={{background:'#f6f7f7',border:'1px solid #dcdcde',borderRadius:4,padding:12}}>
+                  <p style={{fontSize:11,fontWeight:600,color:'#646970',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.5px'}}>Google preview</p>
+                  <p style={{fontSize:16,color:'#1a0dab',marginBottom:2}}>{seoTitle||title||'Post title'}</p>
+                  <p style={{fontSize:12,color:'#006621',marginBottom:3}}>studio.webmify.site/blog/{slug||'post-slug'}</p>
+                  <p style={{fontSize:13,color:'#4d5156'}}>{seoDesc||excerpt||'Meta description...'}</p>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* SIDEBAR */}
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          {/* Publish */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4}}>
+            <div style={{background:'#f6f7f7',padding:'8px 12px',borderBottom:'1px solid #dcdcde',borderRadius:'4px 4px 0 0'}}>
+              <h3 style={{fontSize:13,fontWeight:600,color:'#1d2327',margin:0}}>Publish</h3>
             </div>
-            <div style={{background:'#fff',borderRadius:14,padding:24}}>
-              <p style={{fontSize:11,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:'#78786e',marginBottom:16}}>Google search preview</p>
-              <p style={{fontSize:18,color:'#1a0dab',marginBottom:2,lineHeight:1.3}}>{seoTitle||title||'Your post title'}</p>
-              <p style={{fontSize:13,color:'#006621',marginBottom:4}}>webmify-studio.vercel.app/blog/{slug||'post-slug'}</p>
-              <p style={{fontSize:14,color:'#4d5156',lineHeight:1.55}}>{seoDesc||excerpt||'Your meta description appears here in Google search results.'}</p>
+            <div style={{padding:12}}>
+              <div style={{display:'flex',gap:6,marginBottom:12}}>
+                <button onClick={()=>save('draft')} disabled={saving} style={{flex:1,padding:'6px 10px',fontSize:12,fontWeight:600,border:'1px solid #dcdcde',borderRadius:3,background:'#f6f7f7',color:'#1d2327',cursor:'pointer'}}>Save Draft</button>
+                <button onClick={()=>setShowPreview(p=>!p)} style={{flex:1,padding:'6px 10px',fontSize:12,fontWeight:600,border:'1px solid #dcdcde',borderRadius:3,background:'#f6f7f7',color:'#1d2327',cursor:'pointer'}}>Preview</button>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12,fontSize:13,color:'#1d2327'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#646970" strokeWidth="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#646970" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  <span style={{color:'#646970'}}>Status:</span>
+                  <select value={status} onChange={e=>setStatus(e.target.value as any)} style={{fontSize:12,border:'1px solid #dcdcde',borderRadius:3,padding:'2px 6px',outline:'none',background:'#fff',cursor:'pointer'}}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1a5.5 5.5 0 100 11A5.5 5.5 0 006.5 1z" stroke="#646970" strokeWidth="1.2"/><path d="M4 6.5h5" stroke="#646970" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  <span style={{color:'#646970'}}>Visibility: Public</span>
+                </div>
+              </div>
+              <div style={{borderTop:'1px solid #f0f0f1',paddingTop:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <button type="button" style={{fontSize:12,color:'#d63638',background:'none',border:'none',cursor:'pointer',padding:0}}>Move to Trash</button>
+                <button onClick={()=>save('published')} disabled={saving} style={{padding:'6px 14px',background:'#2271b1',color:'#fff',border:'1px solid #135e96',borderRadius:3,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                  {saving?'Saving...':'Publish'}
+                </button>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Categories */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4}}>
+            <div style={{background:'#f6f7f7',padding:'8px 12px',borderBottom:'1px solid #dcdcde',borderRadius:'4px 4px 0 0'}}>
+              <h3 style={{fontSize:13,fontWeight:600,color:'#1d2327',margin:0}}>Category</h3>
+            </div>
+            <div style={{padding:'8px 12px'}}>
+              {CATEGORIES.map(c=>(
+                <label key={c} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0',fontSize:13,color:'#1d2327',cursor:'pointer'}}>
+                  <input type="radio" name="category" value={c} checked={category===c} onChange={()=>setCategory(c)} style={{cursor:'pointer'}}/>
+                  {c}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Keywords */}
+          <div style={{background:'#fff',border:'1px solid #dcdcde',borderRadius:4}}>
+            <div style={{background:'#f6f7f7',padding:'8px 12px',borderBottom:'1px solid #dcdcde',borderRadius:'4px 4px 0 0'}}>
+              <h3 style={{fontSize:13,fontWeight:600,color:'#1d2327',margin:0}}>Focus Keywords</h3>
+            </div>
+            <div style={{padding:'8px 12px'}}>
+              <input placeholder="e.g. web design, Nigeria, SaaS..." style={{width:'100%',padding:'6px 10px',fontSize:12,border:'1px solid #dcdcde',borderRadius:3,outline:'none'}}/>
+              <p style={{fontSize:11,color:'#646970',margin:'6px 0 0'}}>Separate with commas</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Preview overlay */}
+      {showPreview&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:1000,overflow:'auto'}}>
+          <div style={{maxWidth:720,margin:'40px auto',background:'#fff',borderRadius:8,padding:'40px 36px 60px',position:'relative'}}>
+            <button onClick={()=>setShowPreview(false)} style={{position:'absolute',top:16,right:16,background:'#1d2327',color:'#fff',border:'none',borderRadius:4,padding:'6px 12px',cursor:'pointer',fontSize:12}}>Close</button>
+            {ogImage&&<img src={ogImage} style={{width:'100%',borderRadius:8,marginBottom:24,objectFit:'cover',maxHeight:320}} alt=""/>}
+            <span style={{fontSize:10,fontWeight:600,letterSpacing:'2px',textTransform:'uppercase',color:'#b8944a',background:'rgba(184,148,74,.08)',padding:'3px 10px',borderRadius:100,border:'1px solid rgba(184,148,74,.2)'}}>{category}</span>
+            <h1 style={{fontFamily:'Georgia,serif',fontSize:36,fontWeight:400,letterSpacing:'-1.5px',margin:'14px 0 16px',lineHeight:1.15}}>{title||'Your post title'}</h1>
+            {excerpt&&<p style={{fontSize:16,color:'#646970',lineHeight:1.8,marginBottom:28,paddingBottom:28,borderBottom:'1px solid #dcdcde'}}>{excerpt}</p>}
+            <div style={{fontSize:16,lineHeight:1.85}} dangerouslySetInnerHTML={{__html:toHTML()}}/>
+          </div>
+        </div>
+      )}
 
       <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}}
         onChange={e=>{const f=e.target.files?.[0];const forId=fileRef.current?.getAttribute('data-for')||focusId||undefined;if(f)uploadImg(f,forId);e.target.value=''}}/>
 
       <style>{`
-        [contenteditable]:empty:before{content:attr(data-placeholder);color:#c8c8c0;pointer-events:none}
-        [contenteditable] a{color:#b8944a;text-decoration:underline}
+        [contenteditable]:empty:before{content:attr(data-placeholder);color:#c3c4c7;pointer-events:none}
+        [contenteditable] a{color:#2271b1}
         [contenteditable] strong{font-weight:700}
         [contenteditable] em{font-style:italic}
-        @media(max-width:640px){
-          [contenteditable]{font-size:15px!important}
-          header{padding:0 12px!important}
+        @media(max-width:768px){
+          .wp-layout{grid-template-columns:1fr!important}
         }
       `}</style>
     </div>
