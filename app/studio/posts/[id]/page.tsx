@@ -10,6 +10,7 @@ const CATEGORIES = ['General', 'Product', 'Development', 'Strategy', 'Design', '
 export default function EditPostPage() {
   const router = useRouter()
   const params = useParams()
+  const id = params.id as string
   const [post, setPost] = useState<any>(null)
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -24,7 +25,7 @@ export default function EditPostPage() {
   const [tab, setTab] = useState<'write' | 'seo'>('write')
 
   useEffect(() => {
-    fetch(`/api/posts/${params.id}`).then(r => r.json()).then(p => {
+    fetch(`/api/posts/${id}`).then(r => r.json()).then(p => {
       setPost(p)
       setTitle(p.title || '')
       setSlug(p.slug || '')
@@ -35,30 +36,23 @@ export default function EditPostPage() {
       setSeoTitle(p.seo_title || '')
       setSeoDesc(p.seo_description || '')
     })
-  }, [params.id])
+  }, [id])
 
   async function handleSave(s: 'draft' | 'published') {
     setSaving(true)
-    const res = await fetch(`/api/posts/${params.id}`, {
+    const res = await fetch(`/api/posts/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title, slug, content, excerpt, category,
-        cover_image: coverImage,
-        seo_title: seoTitle,
-        seo_description: seoDesc,
-        status: s,
-        published_at: s === 'published' && !post?.published_at ? new Date().toISOString() : post?.published_at,
-      }),
+      body: JSON.stringify({ title, slug, content, excerpt, category, cover_image: coverImage, seo_title: seoTitle, seo_description: seoDesc, status: s, published_at: s === 'published' && !post?.published_at ? new Date().toISOString() : post?.published_at }),
     })
     if (res.ok) setSaving(false)
     else { alert('Error saving.'); setSaving(false) }
   }
 
   async function handleDelete() {
-    if (!confirm('Delete this post? This cannot be undone.')) return
+    if (!confirm('Delete this post?')) return
     setDeleting(true)
-    await fetch(`/api/posts/${params.id}`, { method: 'DELETE' })
+    await fetch(`/api/posts/${id}`, { method: 'DELETE' })
     router.push('/studio/posts')
   }
 
@@ -79,10 +73,8 @@ export default function EditPostPage() {
           <button onClick={() => handleSave('published')} disabled={saving} style={{ padding: '8px 20px', background: '#0c0c0a', color: '#f8f8f5', border: 'none', borderRadius: '100px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>Publish</button>
         </div>
       </header>
-
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px' }}>
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Post title" style={{ width: '100%', fontFamily: 'Georgia, serif', fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, letterSpacing: '-1.5px', border: 'none', outline: 'none', background: 'transparent', color: '#0c0c0a', marginBottom: '8px' }} />
-
         <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label style={{ fontSize: '11px', color: '#78786e', fontWeight: 500 }}>Slug:</label>
@@ -96,27 +88,22 @@ export default function EditPostPage() {
           </div>
           <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', padding: '4px 12px', borderRadius: '100px', background: post.status === 'published' ? '#dcfce7' : '#f1f1ec', color: post.status === 'published' ? '#166534' : '#78786e', alignSelf: 'center' }}>{post.status}</span>
         </div>
-
         <div style={{ display: 'flex', gap: '0', marginBottom: '20px', borderBottom: '1px solid #e0e0d8' }}>
           {(['write', 'seo'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '10px 20px', fontSize: '12px', fontWeight: 500, background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #0c0c0a' : '2px solid transparent', cursor: 'pointer', color: tab === t ? '#0c0c0a' : '#78786e', textTransform: 'capitalize' }}>{t === 'write' ? 'Write' : 'SEO'}</button>
           ))}
         </div>
-
         {tab === 'write' && (
           <div>
             <div data-color-mode="light" style={{ marginBottom: '20px' }}>
               <MDEditor value={content} onChange={v => setContent(v || '')} height={500} preview="live" />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#78786e', marginBottom: '6px' }}>Excerpt</label>
-              <textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={3} style={{ width: '100%', padding: '11px 14px', border: '1px solid #e0e0d8', borderRadius: '8px', fontSize: '13px', outline: 'none', background: '#fff', resize: 'vertical', fontFamily: 'inherit', marginBottom: '16px' }} />
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#78786e', marginBottom: '6px' }}>Cover image URL</label>
-              <input value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '11px 14px', border: '1px solid #e0e0d8', borderRadius: '8px', fontSize: '13px', outline: 'none', background: '#fff' }} />
-            </div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#78786e', marginBottom: '6px' }}>Excerpt</label>
+            <textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={3} style={{ width: '100%', padding: '11px 14px', border: '1px solid #e0e0d8', borderRadius: '8px', fontSize: '13px', outline: 'none', background: '#fff', resize: 'vertical', fontFamily: 'inherit', marginBottom: '16px' }} />
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#78786e', marginBottom: '6px' }}>Cover image URL</label>
+            <input value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '11px 14px', border: '1px solid #e0e0d8', borderRadius: '8px', fontSize: '13px', outline: 'none', background: '#fff' }} />
           </div>
         )}
-
         {tab === 'seo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
@@ -130,7 +117,7 @@ export default function EditPostPage() {
             <div style={{ background: '#f1f1ec', border: '1px solid #e0e0d8', borderRadius: '10px', padding: '20px' }}>
               <p style={{ fontSize: '11px', fontWeight: 600, color: '#78786e', marginBottom: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>Google preview</p>
               <p style={{ fontSize: '16px', color: '#1a0dab', marginBottom: '4px' }}>{seoTitle || title}</p>
-              <p style={{ fontSize: '12px', color: '#006621', marginBottom: '4px' }}>webmify.site/blog/{slug}</p>
+              <p style={{ fontSize: '12px', color: '#006621', marginBottom: '4px' }}>webmify-studio.vercel.app/blog/{slug}</p>
               <p style={{ fontSize: '13px', color: '#545454' }}>{seoDesc || excerpt}</p>
             </div>
           </div>

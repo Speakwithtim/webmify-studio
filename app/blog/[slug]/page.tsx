@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase'
-import { Post } from '@/lib/types'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -7,8 +6,9 @@ import { notFound } from 'next/navigation'
 
 export const revalidate = 60
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const { data: post } = await supabase.from('posts').select('*').eq('slug', params.slug).single()
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).single()
   if (!post) return {}
   return {
     title: post.seo_title || post.title,
@@ -16,8 +16,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
-  const { data: post } = await supabase.from('posts').select('*').eq('slug', params.slug).eq('status', 'published').single()
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).eq('status', 'published').single()
   if (!post) notFound()
 
   return (
