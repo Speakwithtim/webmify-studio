@@ -191,6 +191,7 @@ export default function NewPostPage() {
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Upload failed')
+      if(!ogImage) setOgImage(json.url)
       const nb:Block={id:uid(),type:'image',text:'',src:json.url,alt:file.name.replace(/\.[^.]+$/,''),caption:'',align:'center'}
       setBlocks(bs=>{
         if(afterId){const i=bs.findIndex(b=>b.id===afterId);const n=[...bs];n.splice(i+1,0,nb);return n}
