@@ -15,11 +15,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { title, slug, content, excerpt, category, seo_title, seo_description, cover_image, status, published_at } = body
-    if (!title || !slug) return NextResponse.json({ error: 'Title and slug required' }, { status: 400 })
+    if (!title) return NextResponse.json({ error: 'Title required' }, { status: 400 })
+    const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     const { data, error } = await supabaseAdmin
       .from('posts')
       .insert({
-        title, slug,
+        title,
+        slug: finalSlug,
         content: content || '',
         excerpt: excerpt || '',
         category: category || 'General',
@@ -33,10 +35,13 @@ export async function POST(req: NextRequest) {
       })
       .select()
       .single()
-    if (error) { console.error('Supabase error:', error); return NextResponse.json({ error: error.message }, { status: 500 }) }
+    if (error) {
+      console.error('Supabase insert error:', JSON.stringify(error))
+      return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+    }
     return NextResponse.json(data)
-  } catch (err) {
+  } catch (err: any) {
     console.error('POST error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
   }
 }
