@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 const CATEGORIES = ['General', 'Product', 'Development', 'Strategy', 'Design', 'SEO', 'Business']
 function uid() { return Math.random().toString(36).slice(2, 9) }
@@ -188,9 +188,9 @@ export default function NewPostPage() {
     try{
       const ext=file.name.split('.').pop()
       const name=`${Date.now()}.${ext}`
-      const {error}=await supabase.storage.from('post-images').upload(name,file)
+      const {error}=await supabaseAdmin.storage.from('post-images').upload(name,file)
       if(error)throw error
-      const {data}=supabase.storage.from('post-images').getPublicUrl(name)
+      const {data}=supabaseAdmin.storage.from('post-images').getPublicUrl(name)
       const nb:Block={id:uid(),type:'image',text:'',src:data.publicUrl,alt:file.name.replace(/\.[^.]+$/,''),caption:'',align:'center'}
       setBlocks(bs=>{
         if(afterId){const i=bs.findIndex(b=>b.id===afterId);const n=[...bs];n.splice(i+1,0,nb);return n}
