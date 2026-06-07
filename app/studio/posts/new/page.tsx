@@ -84,7 +84,7 @@ export default function NewPostPage() {
 
         {tab === 'write' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <Editor value={content} onChange={setContent} height={420} />
+            <Editor value={content} onChange={setContent} />
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#78786e', marginBottom: '6px' }}>Excerpt</label>
               <textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short summary shown on the blog listing..." rows={3}
