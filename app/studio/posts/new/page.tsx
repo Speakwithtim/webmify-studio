@@ -186,17 +186,17 @@ export default function NewPostPage() {
   async function uploadImg(file:File,afterId?:string){
     setUploading(true)
     try{
-      const ext=file.name.split('.').pop()
-      const name=`${Date.now()}.${ext}`
-      const {error}=await supabaseAdmin.storage.from('post-images').upload(name,file)
-      if(error)throw error
-      const {data}=supabaseAdmin.storage.from('post-images').getPublicUrl(name)
-      const nb:Block={id:uid(),type:'image',text:'',src:data.publicUrl,alt:file.name.replace(/\.[^.]+$/,''),caption:'',align:'center'}
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Upload failed')
+      const nb:Block={id:uid(),type:'image',text:'',src:json.url,alt:file.name.replace(/\.[^.]+$/,''),caption:'',align:'center'}
       setBlocks(bs=>{
         if(afterId){const i=bs.findIndex(b=>b.id===afterId);const n=[...bs];n.splice(i+1,0,nb);return n}
         return[...bs,nb]
       })
-    }catch{alert('Upload failed. Make sure the post-images bucket exists in Supabase Storage (public).')}
+    }catch(e:any){alert('Upload failed: '+e.message)}
     finally{setUploading(false)}
   }
 
