@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: 'Webmify Briefs <hello@webmify.site>',
-        to: 'webmifystudios@gmail.com',
+        to: 'webmifystudio@gmail.com',
         reply_to: email,
         subject: `New project brief from ${firstName} ${lastName}`,
         html: `
