@@ -53,8 +53,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   return (
     <div style={{ minHeight: '100vh', background: '#f8f8f5', fontFamily: "'Geist', system-ui, sans-serif" }}>
       <header style={{ borderBottom: '1px solid #e0e0d8', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(248,248,245,0.97)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <Link href="https://webmify.site" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <img src="/favicon.png" alt="Webmify" style={{ height: '28px', width: 'auto' }} />
+        <Link href="https://webmify.site" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/favicon.png" alt="Webmify" style={{ height: '36px', width: 'auto' }} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#0c0c0a', letterSpacing: '-0.3px' }}>Webmify</span>
         </Link>
         <div style={{ display: 'flex', gap: 20 }}>
           <Link href="https://webmify.site" style={{ fontSize: '13px', color: '#78786e', textDecoration: 'none' }}>Home</Link>
