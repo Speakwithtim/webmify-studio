@@ -16,7 +16,9 @@ export default async function BlogPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8f8f5', fontFamily: "'Geist', system-ui, sans-serif" }}>
       <header style={{ borderBottom: '1px solid #e0e0d8', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(248,248,245,0.97)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <Link href="https://webmify.site" style={{ fontWeight: 600, fontSize: '16px', color: '#0c0c0a', textDecoration: 'none', letterSpacing: '-.3px' }}>Webmify</Link>
+        <Link href="https://webmify.site" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <img src="/favicon.png" alt="Webmify" style={{ height: '28px', width: 'auto' }} />
+        </Link>
         <div style={{ display: 'flex', gap: 20 }}>
           <Link href="https://webmify.site" style={{ fontSize: '13px', color: '#78786e', textDecoration: 'none' }}>Home</Link>
           <Link href="https://webmify.site/#services" style={{ fontSize: '13px', color: '#78786e', textDecoration: 'none' }}>Services</Link>
