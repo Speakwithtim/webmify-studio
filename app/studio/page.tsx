@@ -53,8 +53,8 @@ export default async function StudioPage() {
           ].map(a => (
             <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', border: '1px solid #e0e0d8', borderRadius: '12px', padding: '24px', cursor: 'pointer', transition: 'border-color .2s' }}
-                onMouseEnter={(e: any) => e.currentTarget.style.borderColor = '#0c0c0a'}
-                onMouseLeave={(e: any) => e.currentTarget.style.borderColor = '#e0e0d8'}>
+                
+                >
                 <div style={{ fontSize: '15px', fontWeight: 600, color: '#0c0c0a', marginBottom: '6px' }}>{a.title}</div>
                 <div style={{ fontSize: '12px', color: '#78786e' }}>{a.desc}</div>
               </div>
