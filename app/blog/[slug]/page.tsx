@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const post = await getPost(slug)
   if (!post) return {}
-  const ogImage = post.cover_image || 'https://studio.webmify.site/og-default.png'
+  const rawImage = post.cover_image || ''
+  const ogImage = rawImage ? `https://studio.webmify.site/api/image?url=${encodeURIComponent(rawImage)}` : 'https://studio.webmify.site/og-default.png'
   return {
     title: post.seo_title || post.title,
     description: post.seo_description || post.excerpt,
