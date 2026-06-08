@@ -31,6 +31,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: post.seo_title || post.title,
       description: post.seo_description || post.excerpt,
       images: [{ url: ogImage, width: 1200, height: 630 }],
+      url: `https://studio.webmify.site/blog/${slug}`,
+      type: 'article',
+      siteName: 'Webmify',
     },
     twitter: {
       card: 'summary_large_image',
