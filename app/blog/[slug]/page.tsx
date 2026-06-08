@@ -2,14 +2,20 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import CommentsSection from '@/components/CommentsSection'
 import ShareButtons from '@/components/ShareButtons'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export const revalidate = 60
 
 async function getPost(slug: string) {
   try {
-    const res = await fetch(`https://studio.webmify.site/api/posts/slug/${slug}`, { next: { revalidate: 60 } })
-    if (!res.ok) return null
-    return await res.json()
+    const { data, error } = await supabaseAdmin
+      .from('posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single()
+    if (error || !data) return null
+    return data
   } catch { return null }
 }
 
@@ -17,11 +23,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const post = await getPost(slug)
   if (!post) return {}
+  const ogImage = post.cover_image || 'https://studio.webmify.site/og-default.png'
   return {
     title: post.seo_title || post.title,
     description: post.seo_description || post.excerpt,
-    openGraph: { title: post.seo_title || post.title, description: post.seo_description || post.excerpt, images: [{ url: post.cover_image || "https://webmify.site/og-default.png" }] },
-    twitter: { card: 'summary_large_image', title: post.seo_title || post.title, description: post.seo_description || post.excerpt, images: post.cover_image ? [post.cover_image] : [] },
+    openGraph: {
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+      images: [ogImage],
+    },
   }
 }
 
