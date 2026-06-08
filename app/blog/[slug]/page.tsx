@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: post.seo_title || post.title,
     description: post.seo_description || post.excerpt,
-    openGraph: { title: post.seo_title || post.title, description: post.seo_description || post.excerpt, images: post.cover_image ? [{ url: post.cover_image }] : [] },
+    openGraph: { title: post.seo_title || post.title, description: post.seo_description || post.excerpt, images: [{ url: post.cover_image || "https://webmify.site/og-default.png" }] },
     twitter: { card: 'summary_large_image', title: post.seo_title || post.title, description: post.seo_description || post.excerpt, images: post.cover_image ? [post.cover_image] : [] },
   }
 }
