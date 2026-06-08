@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import CommentsSection from '@/components/CommentsSection'
@@ -6,9 +5,17 @@ import ShareButtons from '@/components/ShareButtons'
 
 export const revalidate = 60
 
+async function getPost(slug: string) {
+  try {
+    const res = await fetch(`https://studio.webmify.site/api/posts/slug/${slug}`, { next: { revalidate: 60 } })
+    if (!res.ok) return null
+    return await res.json()
+  } catch { return null }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).single()
+  const post = await getPost(slug)
   if (!post) return {}
   return {
     title: post.seo_title || post.title,
@@ -20,12 +27,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).eq('status', 'published').single()
+  const post = await getPost(slug)
   if (!post) notFound()
   const postUrl = `https://studio.webmify.site/blog/${slug}`
   return (
     <div style={{ minHeight: '100vh', background: '#f8f8f5', fontFamily: "'Geist', system-ui, sans-serif" }}>
-      <header style={{ borderBottom: '1px solid #e0e0d8', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(248,248,245,0.97)', position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(8px)' }}>
+      <header style={{ borderBottom: '1px solid #e0e0d8', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(248,248,245,0.97)', position: 'sticky', top: 0, zIndex: 10 }}>
         <Link href="https://webmify.site" style={{ fontWeight: 600, fontSize: '16px', color: '#0c0c0a', textDecoration: 'none' }}>Webmify</Link>
         <div style={{ display: 'flex', gap: 20 }}>
           <Link href="https://webmify.site" style={{ fontSize: '13px', color: '#78786e', textDecoration: 'none' }}>Home</Link>
