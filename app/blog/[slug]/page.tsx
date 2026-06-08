@@ -61,7 +61,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </header>
       {post.cover_image && (
         <div style={{ width: '100%', height: 'clamp(200px, 40vw, 480px)', overflow: 'hidden', background: '#1e1e1a' }}>
-          <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
       )}
       <main style={{ maxWidth: '720px', margin: '0 auto', padding: '48px 20px 100px' }}>
